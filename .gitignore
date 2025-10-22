@@ -1,0 +1,16 @@
+# Node
+node_modules/
+npm-debug.log
+pnpm-lock.yaml
+dist/
+.vite/
+coverage/
+.env
+.env.local
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Logs
+*.log

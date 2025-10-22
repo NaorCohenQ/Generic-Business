@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "id": "b1",
+    "name": "Demo Business",
+    "type": "food",
+    "deliverySeconds": 12,
+    "productionSlots": 2,
+    "queues": [{ "id": "q1", "name": "Queue #1" }, { "id": "q2", "name": "Queue #2" }],
+    "clockTickMs": 200
+  },
+  "materials": [
+    { "id": "m-bun", "name": "Bun", "icon": "🥯", "buildSeconds": 2 },
+    { "id": "m-patty", "name": "Patty", "icon": "🥩", "buildSeconds": 5 },
+    { "id": "m-lettuce", "name": "Lettuce", "icon": "🥬", "buildSeconds": 1 }
+  ],
+  "products": [
+    { "id": "p-burger", "name": "Hamburger", "materialIds": ["m-bun","m-patty","m-lettuce"] },
+    { "id": "p-salad",  "name": "Salad", "materialIds": ["m-lettuce"] }
+  ],
+  "seed": {
+    "customers": [
+      { "id":"c1","orderTimeSeconds":3,"intention":"order","requestedProductId":"p-burger" },
+      { "id":"c2","orderTimeSeconds":2,"intention":"order","requestedProductId":"p-salad" }
+    ],
+    "queues": [{ "id":"q1","customerIds":["c1","c2"] }, { "id":"q2","customerIds":[] }]
+  }
+}

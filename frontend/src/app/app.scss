@@ -1,0 +1,5 @@
+@import '@/styles/_variables.scss';
+@import '@/styles/_mixins.scss';
+@import '@/styles/dashboard.scss';
+
+html, body, #app { height: 100%; margin: 0; }

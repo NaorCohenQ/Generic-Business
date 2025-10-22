@@ -1,0 +1,12 @@
+{
+  "name": "business-sim",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n FE,BE -c green,cyan \"pnpm --filter frontend dev\" \"pnpm --filter backend start:dev\"",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter backend start && pnpm --filter frontend preview"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
