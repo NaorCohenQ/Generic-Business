@@ -41,15 +41,25 @@ export const useSimStore = defineStore('sim', {
     // customers
     customersById: {} as Record<string, Customer>
   }),
-
-  getters: {
-    activeCreatingOrders(state) {
-      return [...state.activeCreating].map(id => state.orders.get(id)!).filter(Boolean);
-    },
-    deliveringOrders(state) {
-      return [...state.delivering].map(id => state.orders.get(id)!).filter(Boolean);
-    }
+getters: {
+  activeCreatingOrders(state) {
+    return [...state.activeCreating].map(id => state.orders.get(id)!).filter(Boolean);
   },
+  deliveringOrders(state) {
+    return [...state.delivering].map(id => state.orders.get(id)!).filter(Boolean);
+  },
+  paused: (state) => state._paused,
+  speed:  (state) => state._speed
+},
+
+  // getters: {
+  //   activeCreatingOrders(state) {
+  //     return [...state.activeCreating].map(id => state.orders.get(id)!).filter(Boolean);
+  //   },
+  //   deliveringOrders(state) {
+  //     return [...state.delivering].map(id => state.orders.get(id)!).filter(Boolean);
+  //   }
+  // },
 
   actions: {
     hydrateFromSeed(
