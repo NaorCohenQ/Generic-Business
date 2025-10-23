@@ -1,17 +1,12 @@
+// frontend/src/stores/useSimStore.ts
 import { defineStore } from 'pinia';
 import type {
-  ID,
-  BusinessSettings,
-  QueueState,
-  Order,
-  Customer,
-  ProductDef,
-  MaterialDef
+  ID, BusinessSettings, QueueState, Order, Customer, ProductDef, MaterialDef
 } from '../domain/types';
-
 import { reducers } from '../domain/reducers';
 import { scheduleToProductionSlots } from '../services/scheduler';
 import { createTicker } from '../services/ticker';
+import { buildSnapshot, saveSnapshot, hydrateSimFromSnapshot } from '../services/persistence';
 
 function mapById<T extends { id: string }>(arr: T[]): Record<string, T> {
   return arr.reduce((acc, x) => { acc[x.id] = x; return acc; }, {} as Record<string, T>);
@@ -24,6 +19,7 @@ export const useSimStore = defineStore('sim', {
     _speed: 1,
     _paused: false,
     _ticker: null as ReturnType<typeof createTicker> | null,
+    _ticksSinceSave: 0,           // <-- Day 4: throttle autosave
 
     // business config
     settings: null as BusinessSettings | null,
@@ -41,27 +37,20 @@ export const useSimStore = defineStore('sim', {
     // customers
     customersById: {} as Record<string, Customer>
   }),
-getters: {
-  activeCreatingOrders(state) {
-    return [...state.activeCreating].map(id => state.orders.get(id)!).filter(Boolean);
-  },
-  deliveringOrders(state) {
-    return [...state.delivering].map(id => state.orders.get(id)!).filter(Boolean);
-  },
-  paused: (state) => state._paused,
-  speed:  (state) => state._speed
-},
 
-  // getters: {
-  //   activeCreatingOrders(state) {
-  //     return [...state.activeCreating].map(id => state.orders.get(id)!).filter(Boolean);
-  //   },
-  //   deliveringOrders(state) {
-  //     return [...state.delivering].map(id => state.orders.get(id)!).filter(Boolean);
-  //   }
-  // },
+  getters: {
+    activeCreatingOrders(state) {
+      return [...state.activeCreating].map(id => state.orders.get(id)!).filter(Boolean);
+    },
+    deliveringOrders(state) {
+      return [...state.delivering].map(id => state.orders.get(id)!).filter(Boolean);
+    },
+    paused: (state) => state._paused,
+    speed:  (state) => state._speed
+  },
 
   actions: {
+    // called by BusinessStore when fresh data arrives
     hydrateFromSeed(
       settings: BusinessSettings,
       products: ProductDef[],
@@ -75,7 +64,7 @@ getters: {
       this.materialsById = mapById(materials);
 
       // queues
-      this.queues.clear();
+      this.queues = new Map(); // replace to keep reactivity simple
       seed.queues.forEach(q => this.queues.set(q.id, { ...q }));
 
       // customers
@@ -106,16 +95,49 @@ getters: {
       }
     },
 
+    // ---- Day 4: apply snapshot (sim part only; biz will set config)
+    applySimSnapshot(snapSim: {
+      simTimeMs: number;
+      queues: Record<string, QueueState>;
+      orders: Record<string, Order>;
+      activeCreating: string[];
+      delivering: string[];
+    }) {
+      hydrateSimFromSnapshot(this as any, snapSim);
+    },
+
     startTicker() {
       if (!this.settings || this._ticker) return;
       this._ticker = createTicker(() => this.tick(), this.settings.clockTickMs);
       this._ticker.start();
+
+      // save on tab close (best-effort)
+      if (typeof window !== 'undefined') {
+        const onUnload = () => {
+          try {
+            const snap = buildSnapshot({
+              biz: { settings: this.settings!, materials: this.materials, products: this.products },
+              sim: {
+                simTimeMs: this.simTimeMs,
+                queues: this.queues,
+                orders: this.orders,
+                activeCreating: this.activeCreating,
+                delivering: this.delivering
+              }
+            });
+            saveSnapshot(snap);
+          } catch {}
+        };
+        window.addEventListener('beforeunload', onUnload);
+      }
     },
+
     setPaused(val: boolean) { this._paused = val; this._ticker?.setPaused(val); },
-    setSpeed(mult: number) { this._speed = mult || 1; this._ticker?.setSpeed(mult || 1); },
+    setSpeed(mult: number)  { this._speed = mult || 1; this._ticker?.setSpeed(mult || 1); },
 
     tick() {
       if (!this.settings || this._paused) return;
+
       const dtMs = this.settings.clockTickMs * this._speed;
       this.simTimeMs += dtMs;
 
@@ -123,6 +145,28 @@ getters: {
       scheduleToProductionSlots(this);
       reducers.advanceCreation(this, dtMs);
       reducers.advanceDelivery(this, dtMs);
+
+      // ---- Day 4: throttle autosave (e.g., every ~1s for 200ms tick)
+      this._ticksSinceSave++;
+      const SAVE_EVERY_TICKS = Math.max(1, Math.round(1000 / (this.settings.clockTickMs || 200)));
+      if (this._ticksSinceSave >= SAVE_EVERY_TICKS) {
+        this._ticksSinceSave = 0;
+        try {
+          const snap = buildSnapshot({
+            biz: { settings: this.settings, materials: this.materials, products: this.products } as any,
+            sim: {
+              simTimeMs: this.simTimeMs,
+              queues: this.queues,
+              orders: this.orders,
+              activeCreating: this.activeCreating,
+              delivering: this.delivering
+            }
+          });
+          saveSnapshot(snap);
+        } catch (e) {
+          // ignore persistence errors silently
+        }
+      }
     }
   }
 });
