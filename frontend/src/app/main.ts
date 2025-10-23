@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import AppShell from '@/layouts/AppShell.vue';
+import AppShell from '../layouts/AppShell.vue';
 import router from './router';
 import './app.scss';
 

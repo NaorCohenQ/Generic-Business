@@ -2,17 +2,24 @@
   <section class="dashboard">
     <h2>Queue Status</h2>
     <div class="panel">
-      <QueueBar v-for="q in biz.settings?.queues || []" :key="q.id" :queue="q" />
+      <QueueBar
+        v-for="q in biz.settings?.queues || []"
+        :key="q.id"
+        :queue="q"
+        :state="sim.queues.get(q.id) || { id: q.id, customerIds: [] }"
+      />
     </div>
 
     <h2>Production Status</h2>
     <div class="panel">
-      <SlotCard v-for="o in sim.activeCreatingOrders" :key="o?.id" :order="o" />
+      <!-- ✅ camelCase -->
+      <SlotCard v-for="o in sim.activeCreatingOrders" :key="o.id" :orderId="o.id" />
     </div>
 
     <h2>Delivery Status</h2>
     <div class="panel">
-      <DeliveryCard v-for="o in sim.deliveringOrders" :key="o?.id" :order="o" />
+      <!-- ✅ camelCase -->
+      <DeliveryCard v-for="o in sim.deliveringOrders" :key="o.id" :orderId="o.id" />
     </div>
   </section>
 </template>
@@ -29,6 +36,6 @@ const sim = useSimStore();
 </script>
 
 <style scoped>
-.panel { display:grid; gap:12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.panel { display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 h2 { margin: 24px 0 8px; }
 </style>

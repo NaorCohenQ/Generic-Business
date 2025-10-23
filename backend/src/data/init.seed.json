@@ -11,7 +11,7 @@
   "materials": [
     { "id": "m-bun", "name": "Bun", "icon": "🥯", "buildSeconds": 2 },
     { "id": "m-patty", "name": "Patty", "icon": "🥩", "buildSeconds": 5 },
-    { "id": "m-lettuce", "name": "Lettuce", "icon": "🥬", "buildSeconds": 1 }
+    { "id": "m-lettuce", "name": "Lettuce", "icon": "🥬", "buildSeconds": 4 }
   ],
   "products": [
     { "id": "p-burger", "name": "Hamburger", "materialIds": ["m-bun","m-patty","m-lettuce"] },

@@ -8,18 +8,28 @@ export const useBusinessStore = defineStore('biz', {
     settings: null as BusinessSettings | null,
     materials: [] as MaterialDef[],
     products: [] as ProductDef[],
-    seed: { customers: [] as Customer[], queues: [] as QueueState[] }
+    seed: { customers: [] as Customer[], queues: [] as QueueState[] },
+    isLoaded: false,
+    error: '' as string | ''
   }),
   actions: {
     async bootstrap() {
-      const data = await api.getInit();
-      this.settings = data.settings;
-      this.materials = data.materials;
-      this.products = data.products;
-      this.seed = data.seed;
-      const sim = useSimStore();
-      sim.hydrateFromSeed(this.settings!, this.products, this.materials, this.seed);
-      // ticker starts Day 3
+      try {
+        const data = await api.getInit();
+        this.settings = data.settings;
+        this.materials = data.materials;
+        this.products = data.products;
+        this.seed = data.seed;
+
+        const sim = useSimStore();
+        sim.hydrateFromSeed(this.settings!, this.products, this.materials, this.seed);
+        sim.startTicker();
+
+        this.isLoaded = true;
+      } catch (e:any) {
+        this.error = e?.message ?? 'Failed to load init';
+        console.error(e);
+      }
     }
   }
 });
